@@ -82,7 +82,7 @@ import OpenTelemetry.Attributes.Key (unkey)
 import qualified OpenTelemetry.Context as Context
 import OpenTelemetry.Context.ThreadLocal
 import OpenTelemetry.Metric.Core
-import OpenTelemetry.Propagator (emptyTextMap, extract, getGlobalTextMapPropagator, inject, textMapFromList, textMapToList)
+import OpenTelemetry.Propagator (emptyTextMap, extract, inject, textMapFromList, textMapToList)
 import qualified OpenTelemetry.SemanticConventions as SC
 import OpenTelemetry.SemanticsConfig
 import OpenTelemetry.Trace.Core
@@ -126,8 +126,8 @@ newOpenTelemetryWaiMiddleware' tp meter = do
     usefulCallsite = callerAttributes
     middleware :: Tracer -> Histogram -> UpDownCounter Int64 -> Counter Int64 -> Middleware
     middleware tracer dur active reqCount app req sendResp = do
-      propagator <- getGlobalTextMapPropagator
-      let parentContextM = do
+      let propagator = getTracerProviderPropagators $ getTracerTracerProvider tracer
+          parentContextM = do
             ctx <- getContext
             let tm = textMapFromList $ map (\(k, v) -> (T.decodeUtf8 (CI.foldedCase k), T.decodeUtf8 v)) (requestHeaders req)
             ctxt <- extract propagator tm ctx
